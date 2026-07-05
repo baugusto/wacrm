@@ -1,12 +1,12 @@
 /**
- * Single source of truth for the color-theme catalog.
+ * Single source of truth for the ROI Wise color-theme catalog.
  *
  * The CSS variables themselves live in `src/app/globals.css` under
  * `html[data-theme="..."]` blocks — that file is the one we paste
  * theme tokens into. This module only carries the metadata the UI
  * (settings picker, no-flash boot script) needs.
  *
- * Adding a new theme is a two-step change:
+ * Adding a new accent is a two-step change:
  *   1. Append the new `html[data-theme="<id>"]` block in globals.css
  *      with every token from an existing theme (use violet as the
  *      shape reference).
@@ -14,18 +14,18 @@
  */
 
 export const THEME_IDS = [
-  "violet",
-  "emerald",
-  "cobalt",
-  "amber",
-  "rose",
+  'violet',
+  'emerald',
+  'cobalt',
+  'amber',
+  'rose',
 ] as const;
 
 export type ThemeId = (typeof THEME_IDS)[number];
 
-export const DEFAULT_THEME: ThemeId = "violet";
+export const DEFAULT_THEME: ThemeId = 'violet';
 
-export const STORAGE_KEY = "wacrm.theme";
+export const STORAGE_KEY = 'wacrm.theme';
 
 /**
  * MODE — the light/dark dimension, orthogonal to the accent theme.
@@ -37,19 +37,20 @@ export const STORAGE_KEY = "wacrm.theme";
  * opt-in eye-strain-friendly alternative.
  *
  * Persisted under its own localStorage key so it composes freely
- * with the accent choice (you can run Violet-light or Violet-dark).
+ * with the accent choice.
  */
-export const MODES = ["light", "dark"] as const;
+export const MODES = ['light', 'dark'] as const;
 
 export type Mode = (typeof MODES)[number];
 
-export const DEFAULT_MODE: Mode = "dark";
+export const DEFAULT_MODE: Mode = 'dark';
 
-export const MODE_STORAGE_KEY = "wacrm.mode";
+export const MODE_STORAGE_KEY = 'wacrm.mode';
 
 export function isMode(value: unknown): value is Mode {
   return (
-    typeof value === "string" && (MODES as ReadonlyArray<string>).includes(value)
+    typeof value === 'string' &&
+    (MODES as ReadonlyArray<string>).includes(value)
   );
 }
 
@@ -68,40 +69,40 @@ export interface ThemeMeta {
 
 export const THEMES: ReadonlyArray<ThemeMeta> = [
   {
-    id: "violet",
-    name: "Violet",
-    tagline: "The default — confident, slightly playful.",
-    swatch: "oklch(0.526 0.247 293)",
+    id: 'violet',
+    name: 'Wise Teal',
+    tagline: 'The default ROI Wise signal for conversion and core actions.',
+    swatch: '#0BBFAD',
   },
   {
-    id: "emerald",
-    name: "Emerald",
-    tagline: "Growth-coded, nods at messaging without copying WhatsApp green.",
-    swatch: "oklch(0.62 0.16 162)",
+    id: 'emerald',
+    name: 'Growth Green',
+    tagline: 'Recovered revenue, positive movement, and successful outcomes.',
+    swatch: '#22D07A',
   },
   {
-    id: "cobalt",
-    name: "Cobalt",
-    tagline: "Clean B2B-SaaS blue — calm and product-y.",
-    swatch: "oklch(0.585 0.2 254)",
+    id: 'cobalt',
+    name: 'Attribution Blue',
+    tagline: 'Analysis, signal clarity, and source attribution.',
+    swatch: '#60A5FA',
   },
   {
-    id: "amber",
-    name: "Amber",
-    tagline: "Warm and friendly — feels good for SMB teams.",
-    swatch: "oklch(0.745 0.16 65)",
+    id: 'amber',
+    name: 'Opportunity Amber',
+    tagline: 'Attention states and opportunities that need a decision.',
+    swatch: '#F59E0B',
   },
   {
-    id: "rose",
-    name: "Rose",
-    tagline: "Bold and modern — D2C, creator-economy, lifestyle.",
-    swatch: "oklch(0.645 0.22 16)",
+    id: 'rose',
+    name: 'Loss Red',
+    tagline: 'Risk, loss, and destructive states used with restraint.',
+    swatch: '#F04E4E',
   },
 ];
 
 export function isThemeId(value: unknown): value is ThemeId {
   return (
-    typeof value === "string" &&
+    typeof value === 'string' &&
     (THEME_IDS as ReadonlyArray<string>).includes(value)
   );
 }

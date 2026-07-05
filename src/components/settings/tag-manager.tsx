@@ -26,14 +26,14 @@ import { cn } from '@/lib/utils';
 import type { Tag } from '@/types';
 
 const PRESET_COLORS = [
-  { name: 'Red', value: '#ef4444' },
-  { name: 'Orange', value: '#f97316' },
-  { name: 'Amber', value: '#f59e0b' },
-  { name: 'Emerald', value: '#10b981' },
-  { name: 'Cyan', value: '#06b6d4' },
-  { name: 'Blue', value: '#3b82f6' },
-  { name: 'Violet', value: '#8b5cf6' },
-  { name: 'Pink', value: '#ec4899' },
+  { name: 'Loss Red', value: '#f04e4e' },
+  { name: 'Risk Orange', value: '#f97316' },
+  { name: 'Opportunity Amber', value: '#f59e0b' },
+  { name: 'Growth Green', value: '#22d07a' },
+  { name: 'Wise Teal', value: '#0bbfad' },
+  { name: 'Attribution Blue', value: '#60a5fa' },
+  { name: 'Navy', value: '#3a5a8a' },
+  { name: 'Teal Tint', value: '#9eeee8' },
 ];
 
 /**
@@ -151,8 +151,8 @@ export function TagManager() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-foreground">
-          <TagIcon className="size-4 text-primary" />
+        <CardTitle className="text-foreground flex items-center gap-2">
+          <TagIcon className="text-primary size-4" />
           Tags
         </CardTitle>
         <CardDescription className="text-muted-foreground">
@@ -162,7 +162,7 @@ export function TagManager() {
       <CardContent className="space-y-4">
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="size-6 animate-spin text-primary" />
+            <Loader2 className="text-primary size-6 animate-spin" />
           </div>
         ) : (
           <>
@@ -195,7 +195,7 @@ export function TagManager() {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 No tags yet — create your first one below.
               </p>
             )}
@@ -224,7 +224,7 @@ export function TagManager() {
                     className={cn(
                       'size-6 rounded-md transition-transform hover:scale-110',
                       selectedColor === color.value &&
-                        'outline outline-2 outline-offset-2 outline-primary',
+                        'outline-primary outline outline-2 outline-offset-2'
                     )}
                     style={{ backgroundColor: color.value }}
                     title={color.name}

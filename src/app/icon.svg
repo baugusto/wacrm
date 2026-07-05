@@ -1,0 +1,59 @@
+<svg
+  width="36"
+  height="36"
+  viewBox="0 0 36 36"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <defs>
+    <linearGradient
+      id="roi-wise-icon-bg"
+      x1="0"
+      y1="0"
+      x2="36"
+      y2="36"
+      gradientUnits="userSpaceOnUse"
+    >
+      <stop stop-color="#0C1F38" />
+      <stop offset="1" stop-color="#050D1A" />
+    </linearGradient>
+  </defs>
+  <rect width="36" height="36" rx="9" fill="url(#roi-wise-icon-bg)" />
+  <rect
+    width="36"
+    height="36"
+    rx="9"
+    fill="none"
+    stroke="rgba(11,191,173,0.28)"
+    stroke-width="1"
+  />
+  <line
+    x1="5.5"
+    y1="30"
+    x2="12.5"
+    y2="13"
+    stroke="#0BBFAD"
+    stroke-width="5"
+    stroke-linecap="round"
+    stroke-opacity="0.32"
+  />
+  <line
+    x1="14.5"
+    y1="27"
+    x2="21.5"
+    y2="10"
+    stroke="#0BBFAD"
+    stroke-width="5"
+    stroke-linecap="round"
+    stroke-opacity="0.63"
+  />
+  <line
+    x1="23.5"
+    y1="24"
+    x2="30.5"
+    y2="7"
+    stroke="#0BBFAD"
+    stroke-width="5"
+    stroke-linecap="round"
+  />
+</svg>
