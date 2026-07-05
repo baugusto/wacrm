@@ -1,0 +1,410 @@
+services:
+  roiwise_app:
+    image: roiwise/wacrm:latest
+    environment:
+      NODE_ENV: production
+      PORT: "80"
+
+      NEXT_PUBLIC_SITE_URL: "${NEXT_PUBLIC_SITE_URL}"
+      NEXT_PUBLIC_SUPABASE_URL: "${NEXT_PUBLIC_SUPABASE_URL}"
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: "${NEXT_PUBLIC_SUPABASE_ANON_KEY}"
+      SUPABASE_SERVICE_ROLE_KEY: "${SUPABASE_SERVICE_ROLE_KEY}"
+      ENCRYPTION_KEY: "${ENCRYPTION_KEY}"
+      META_APP_SECRET: "${META_APP_SECRET}"
+      META_APP_ID: "${META_APP_ID:-}"
+      AI_REQUEST_TIMEOUT_MS: "${AI_REQUEST_TIMEOUT_MS:-30000}"
+      AI_CONTEXT_MESSAGE_LIMIT: "${AI_CONTEXT_MESSAGE_LIMIT:-20}"
+      AUTOMATION_CRON_SECRET: "${AUTOMATION_CRON_SECRET:-}"
+
+    networks:
+      - network_swarm_public
+      - roiwise_internal
+
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname == srv01
+      restart_policy:
+        condition: on-failure
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=network_swarm_public
+        - traefik.http.routers.roiwise_app.rule=Host(`roiwise.com.br`)
+        - traefik.http.routers.roiwise_app.entrypoints=websecure
+        - traefik.http.routers.roiwise_app.tls.certresolver=letsencryptresolver
+        - traefik.http.routers.roiwise_app.priority=10
+        - traefik.http.routers.roiwise_app.service=roiwise_app
+        - traefik.http.services.roiwise_app.loadbalancer.server.port=80
+        - traefik.http.services.roiwise_app.loadbalancer.passHostHeader=true
+
+  supabase_kong:
+    image: kong/kong:3.9.1
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /usr/local/kong/kong.yml
+      KONG_DNS_ORDER: LAST,A,CNAME
+      KONG_DNS_NOT_FOUND_TTL: "1"
+      KONG_PLUGINS: request-transformer,cors,key-auth,acl,basic-auth,request-termination,post-function
+      KONG_NGINX_PROXY_PROXY_BUFFER_SIZE: 160k
+      KONG_NGINX_PROXY_PROXY_BUFFERS: 64 160k
+      KONG_PROXY_ACCESS_LOG: /dev/stdout combined
+      SUPABASE_ANON_KEY: "${ANON_KEY}"
+      SUPABASE_SERVICE_KEY: "${SERVICE_ROLE_KEY}"
+      DASHBOARD_USERNAME: "${DASHBOARD_USERNAME}"
+      DASHBOARD_PASSWORD: "${DASHBOARD_PASSWORD}"
+    volumes:
+      - ./deploy/supabase/kong.yml:/home/kong/temp.yml:ro
+      - ./deploy/supabase/kong-entrypoint.sh:/home/kong/kong-entrypoint.sh:ro
+    entrypoint: ["/bin/sh", "/home/kong/kong-entrypoint.sh"]
+    networks:
+      network_swarm_public:
+      roiwise_internal:
+        aliases:
+          - kong
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname == srv01
+      restart_policy:
+        condition: on-failure
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=network_swarm_public
+        - traefik.http.routers.roiwise_supabase.rule=Host(`roiwise.com.br`) && PathPrefix(`/supabase`)
+        - traefik.http.routers.roiwise_supabase.entrypoints=websecure
+        - traefik.http.routers.roiwise_supabase.tls.certresolver=letsencryptresolver
+        - traefik.http.routers.roiwise_supabase.priority=100
+        - traefik.http.routers.roiwise_supabase.middlewares=roiwise_supabase_stripprefix
+        - traefik.http.routers.roiwise_supabase.service=roiwise_supabase
+        - traefik.http.middlewares.roiwise_supabase_stripprefix.stripprefix.prefixes=/supabase
+        - traefik.http.services.roiwise_supabase.loadbalancer.server.port=8000
+        - traefik.http.services.roiwise_supabase.loadbalancer.passHostHeader=true
+
+  supabase_auth:
+    image: supabase/gotrue:v2.189.0
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: "9999"
+      API_EXTERNAL_URL: "${API_EXTERNAL_URL}"
+      GOTRUE_SITE_URL: "${SITE_URL}"
+      GOTRUE_URI_ALLOW_LIST: "${ADDITIONAL_REDIRECT_URLS:-}"
+      GOTRUE_DISABLE_SIGNUP: "${DISABLE_SIGNUP:-false}"
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: "postgres://supabase_auth_admin:${POSTGRES_PASSWORD}@supabase_db:5432/postgres"
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_EXP: "${JWT_EXPIRY:-3600}"
+      GOTRUE_JWT_SECRET: "${JWT_SECRET}"
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "${ENABLE_EMAIL_SIGNUP:-true}"
+      GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED: "${ENABLE_ANONYMOUS_USERS:-false}"
+      GOTRUE_MAILER_AUTOCONFIRM: "${ENABLE_EMAIL_AUTOCONFIRM:-true}"
+      GOTRUE_SMTP_ADMIN_EMAIL: "${SMTP_ADMIN_EMAIL:-admin@roiwise.com.br}"
+      GOTRUE_SMTP_HOST: "${SMTP_HOST:-}"
+      GOTRUE_SMTP_PORT: "${SMTP_PORT:-587}"
+      GOTRUE_SMTP_USER: "${SMTP_USER:-}"
+      GOTRUE_SMTP_PASS: "${SMTP_PASS:-}"
+      GOTRUE_SMTP_SENDER_NAME: "${SMTP_SENDER_NAME:-ROI Wise}"
+      GOTRUE_MAILER_URLPATHS_INVITE: "/auth/v1/verify"
+      GOTRUE_MAILER_URLPATHS_CONFIRMATION: "/auth/v1/verify"
+      GOTRUE_MAILER_URLPATHS_RECOVERY: "/auth/v1/verify"
+      GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE: "/auth/v1/verify"
+      GOTRUE_EXTERNAL_PHONE_ENABLED: "${ENABLE_PHONE_SIGNUP:-false}"
+      GOTRUE_SMS_AUTOCONFIRM: "${ENABLE_PHONE_AUTOCONFIRM:-false}"
+    networks:
+      roiwise_internal:
+        aliases:
+          - auth
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9999/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname == srv01
+      restart_policy:
+        condition: on-failure
+
+  supabase_rest:
+    image: postgrest/postgrest:v14.12
+    environment:
+      PGRST_DB_URI: "postgres://authenticator:${POSTGRES_PASSWORD}@supabase_db:5432/postgres"
+      PGRST_DB_SCHEMAS: "${PGRST_DB_SCHEMAS:-public,storage}"
+      PGRST_DB_MAX_ROWS: "${PGRST_DB_MAX_ROWS:-1000}"
+      PGRST_DB_EXTRA_SEARCH_PATH: "${PGRST_DB_EXTRA_SEARCH_PATH:-public,extensions}"
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_ADMIN_SERVER_PORT: "3001"
+      PGRST_ADMIN_SERVER_HOST: localhost
+      PGRST_JWT_SECRET: "${JWT_SECRET}"
+      PGRST_DB_USE_LEGACY_GUCS: "false"
+      PGRST_APP_SETTINGS_JWT_SECRET: "${JWT_SECRET}"
+      PGRST_APP_SETTINGS_JWT_EXP: "${JWT_EXPIRY:-3600}"
+    command: ["postgrest"]
+    networks:
+      roiwise_internal:
+        aliases:
+          - rest
+    healthcheck:
+      test: ["CMD", "postgrest", "--ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname == srv01
+      restart_policy:
+        condition: any
+
+  supabase_realtime:
+    image: supabase/realtime:v2.102.3
+    hostname: realtime-dev.supabase-realtime
+    environment:
+      PORT: "4000"
+      DB_HOST: supabase_db
+      DB_PORT: "5432"
+      DB_USER: supabase_admin
+      DB_PASSWORD: "${POSTGRES_PASSWORD}"
+      DB_NAME: postgres
+      DB_AFTER_CONNECT_QUERY: "SET search_path TO _realtime"
+      DB_ENC_KEY: "${REALTIME_DB_ENC_KEY}"
+      API_JWT_SECRET: "${JWT_SECRET}"
+      SECRET_KEY_BASE: "${SECRET_KEY_BASE}"
+      METRICS_JWT_SECRET: "${JWT_SECRET}"
+      ERL_AFLAGS: -proto_dist inet_tcp
+      DNS_NODES: "''"
+      RLIMIT_NOFILE: "10000"
+      APP_NAME: realtime
+      SEED_SELF_HOST: "true"
+      RUN_JANITOR: "true"
+      DISABLE_HEALTHCHECK_LOGGING: "true"
+    networks:
+      roiwise_internal:
+        aliases:
+          - realtime
+          - realtime-dev.supabase-realtime
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sSfL --head -o /dev/null -H \"Authorization: Bearer ${ANON_KEY}\" http://localhost:4000/api/tenants/realtime-dev/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname == srv01
+      restart_policy:
+        condition: on-failure
+
+  supabase_storage:
+    image: supabase/storage-api:v1.60.4
+    environment:
+      ANON_KEY: "${ANON_KEY}"
+      SERVICE_KEY: "${SERVICE_ROLE_KEY}"
+      POSTGREST_URL: http://rest:3000
+      AUTH_JWT_SECRET: "${JWT_SECRET}"
+      DATABASE_URL: "postgres://supabase_storage_admin:${POSTGRES_PASSWORD}@supabase_db:5432/postgres"
+      STORAGE_PUBLIC_URL: "${SUPABASE_PUBLIC_URL}"
+      REQUEST_ALLOW_X_FORWARDED_PATH: "true"
+      FILE_SIZE_LIMIT: "${STORAGE_FILE_SIZE_LIMIT:-52428800}"
+      STORAGE_BACKEND: file
+      GLOBAL_S3_BUCKET: "${GLOBAL_S3_BUCKET:-storage}"
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      TENANT_ID: "${STORAGE_TENANT_ID:-stub}"
+      REGION: "${REGION:-local}"
+      ENABLE_IMAGE_TRANSFORMATION: "true"
+      IMGPROXY_URL: http://imgproxy:5001
+      S3_PROTOCOL_ACCESS_KEY_ID: "${S3_PROTOCOL_ACCESS_KEY_ID}"
+      S3_PROTOCOL_ACCESS_KEY_SECRET: "${S3_PROTOCOL_ACCESS_KEY_SECRET}"
+    volumes:
+      - supabase_storage_data:/var/lib/storage
+    networks:
+      roiwise_internal:
+        aliases:
+          - storage
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:5000/status"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname == srv01
+      restart_policy:
+        condition: any
+
+  supabase_imgproxy:
+    image: darthsim/imgproxy:v3.30.1
+    environment:
+      IMGPROXY_BIND: ":5001"
+      IMGPROXY_LOCAL_FILESYSTEM_ROOT: /
+      IMGPROXY_USE_ETAG: "true"
+      IMGPROXY_AUTO_WEBP: "${IMGPROXY_AUTO_WEBP:-true}"
+      IMGPROXY_MAX_SRC_RESOLUTION: "16.8"
+    volumes:
+      - supabase_storage_data:/var/lib/storage:ro
+    networks:
+      roiwise_internal:
+        aliases:
+          - imgproxy
+    healthcheck:
+      test: ["CMD", "imgproxy", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname == srv01
+      restart_policy:
+        condition: on-failure
+
+  supabase_meta:
+    image: supabase/postgres-meta:v0.96.6
+    environment:
+      PG_META_PORT: "8080"
+      PG_META_DB_HOST: supabase_db
+      PG_META_DB_PORT: "5432"
+      PG_META_DB_NAME: postgres
+      PG_META_DB_USER: postgres
+      PG_META_DB_PASSWORD: "${POSTGRES_PASSWORD}"
+      CRYPTO_KEY: "${PG_META_CRYPTO_KEY}"
+    networks:
+      roiwise_internal:
+        aliases:
+          - meta
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname == srv01
+      restart_policy:
+        condition: on-failure
+
+  supabase_studio:
+    image: supabase/studio:2026.06.03-sha-0bca601
+    environment:
+      HOSTNAME: "0.0.0.0"
+      STUDIO_PG_META_URL: http://meta:8080
+      POSTGRES_PORT: "5432"
+      POSTGRES_HOST: supabase_db
+      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      POSTGRES_USER_READ_WRITE: postgres
+      PG_META_CRYPTO_KEY: "${PG_META_CRYPTO_KEY}"
+      PGRST_DB_SCHEMAS: "${PGRST_DB_SCHEMAS:-public,storage}"
+      PGRST_DB_MAX_ROWS: "${PGRST_DB_MAX_ROWS:-1000}"
+      PGRST_DB_EXTRA_SEARCH_PATH: "${PGRST_DB_EXTRA_SEARCH_PATH:-public,extensions}"
+      DEFAULT_ORGANIZATION_NAME: "${STUDIO_DEFAULT_ORGANIZATION:-ROI Wise}"
+      DEFAULT_PROJECT_NAME: "${STUDIO_DEFAULT_PROJECT:-WACRM}"
+      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+      SUPABASE_URL: http://kong:8000
+      SUPABASE_PUBLIC_URL: "${SUPABASE_PUBLIC_URL}"
+      SUPABASE_ANON_KEY: "${ANON_KEY}"
+      SUPABASE_SERVICE_KEY: "${SERVICE_ROLE_KEY}"
+      AUTH_JWT_SECRET: "${JWT_SECRET}"
+      ENABLED_FEATURES_LOGS_ALL: "false"
+    networks:
+      roiwise_internal:
+        aliases:
+          - studio
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3000/api/platform/profile').then((r) => {if (r.status !== 200) throw new Error(r.status)})\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname == srv01
+      restart_policy:
+        condition: on-failure
+
+  supabase_db:
+    image: supabase/postgres:17.6.1.136
+    environment:
+      POSTGRES_HOST: /var/run/postgresql
+      PGPORT: "5432"
+      POSTGRES_PORT: "5432"
+      PGPASSWORD: "${POSTGRES_PASSWORD}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      POSTGRES_USER: postgres
+      PGDATABASE: postgres
+      POSTGRES_DB: postgres
+      JWT_SECRET: "${JWT_SECRET}"
+      JWT_EXP: "${JWT_EXPIRY:-3600}"
+    command:
+      - postgres
+      - -c
+      - config_file=/etc/postgresql/postgresql.conf
+      - -c
+      - log_min_messages=fatal
+    volumes:
+      - ./deploy/supabase/db/00-roles.sql:/docker-entrypoint-initdb.d/00-roles.sql:ro
+      - ./deploy/supabase/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:ro
+      - ./deploy/supabase/db/roles.sql:/docker-entrypoint-initdb.d/init-scripts/99-roles.sql:ro
+      - ./deploy/supabase/db/jwt.sql:/docker-entrypoint-initdb.d/init-scripts/99-jwt.sql:ro
+      - ./deploy/supabase/db/_supabase.sql:/docker-entrypoint-initdb.d/migrations/97-_supabase.sql:ro
+      - ./deploy/supabase/db/zz-auth-function-owners.sql:/docker-entrypoint-initdb.d/zz-auth-function-owners.sql:ro
+      - supabase_db_data:/var/lib/postgresql/data
+      - supabase_db_config:/etc/postgresql-custom
+    networks:
+      roiwise_internal:
+        aliases:
+          - db
+          - supabase_db
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname == srv01
+      restart_policy:
+        condition: on-failure
+
+networks:
+  network_swarm_public:
+    external: true
+  roiwise_internal:
+    name: roiwise_internal
+    driver: overlay
+    attachable: true
+
+volumes:
+  supabase_db_data:
+  supabase_db_config:
+  supabase_storage_data:
