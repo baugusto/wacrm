@@ -42,6 +42,8 @@ export const metadata: Metadata = {
   },
 };
 
+export const dynamic = 'force-dynamic';
+
 const navItems = [
   { label: 'Problema', href: '#problema' },
   { label: 'Benefícios', href: '#beneficios' },
