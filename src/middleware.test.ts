@@ -54,18 +54,23 @@ const ROTATED = {
 };
 
 describe('proxy — refreshed auth cookies survive redirects', () => {
-  it('carries the rotated token when redirecting a signed-in user off /login', async () => {
+  it('keeps /login public for a signed-in user', async () => {
     mockUser = { id: 'user-1' };
     refreshedCookies = [ROTATED];
 
     const res = await proxy(new NextRequest('https://app.test/login'));
 
-    // Redirect to /dashboard…
-    expect(res.status).toBe(307);
-    expect(res.headers.get('location')).toContain('/dashboard');
-    // …and the rotated cookie MUST ride along, otherwise the browser keeps
-    // replaying the now-consumed refresh token and the session wedges until
-    // the user manually clears cookies.
+    expect(res.headers.get('location')).toBeNull();
+    expect(res.cookies.get(ROTATED.name)?.value).toBe(ROTATED.value);
+  });
+
+  it('keeps the landing page public for a signed-in user', async () => {
+    mockUser = { id: 'user-1' };
+    refreshedCookies = [ROTATED];
+
+    const res = await proxy(new NextRequest('https://app.test/'));
+
+    expect(res.headers.get('location')).toBeNull();
     expect(res.cookies.get(ROTATED.name)?.value).toBe(ROTATED.value);
   });
 

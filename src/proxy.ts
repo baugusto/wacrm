@@ -46,31 +46,20 @@ export async function proxy(request: NextRequest) {
     return response;
   };
 
-  // Auth pages - redirect to dashboard if already logged in.
-  // Exception: when an invite token is in the query string we
-  // send the already-signed-in user to /join/<token> instead so
-  // they can accept the invitation in one click. Without this,
-  // a forwarded invite link to someone who's already signed in
-  // would silently drop them on /dashboard.
+  // Invite auth pages - when an already signed-in user opens a forwarded
+  // invite link, send them directly to the invitation accept screen. Plain
+  // auth pages stay public so the marketing landing's "Entrar" button always
+  // opens /login instead of bouncing an existing session to /dashboard.
+  const inviteToken = request.nextUrl.searchParams.get('invite');
   if (
     user &&
+    inviteToken &&
     (request.nextUrl.pathname === '/login' ||
-      request.nextUrl.pathname === '/signup' ||
-      request.nextUrl.pathname === '/forgot-password')
+      request.nextUrl.pathname === '/signup')
   ) {
     const url = request.nextUrl.clone();
-    const inviteToken = request.nextUrl.searchParams.get('invite');
-    if (
-      inviteToken &&
-      (request.nextUrl.pathname === '/login' ||
-        request.nextUrl.pathname === '/signup')
-    ) {
-      url.pathname = `/join/${encodeURIComponent(inviteToken)}`;
-      url.search = '';
-    } else {
-      url.pathname = '/dashboard';
-      url.search = '';
-    }
+    url.pathname = `/join/${encodeURIComponent(inviteToken)}`;
+    url.search = '';
     return withRefreshedCookies(NextResponse.redirect(url));
   }
 
