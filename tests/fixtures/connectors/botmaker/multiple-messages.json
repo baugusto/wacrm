@@ -1,0 +1,44 @@
+{
+  "lastName": "User",
+  "firstName": "Multi",
+  "chatPlatform": "whatsapp",
+  "customerCreationTime": "2025-11-30T16:58:34.907Z",
+  "contactId": "5591112344321",
+  "sessionId": "multi-session-001",
+  "type": "message",
+  "whatsappNumber": "551151962520",
+  "sessionCreationTime": "2025-12-03T15:58:34.907Z",
+  "customerId": "X1HTQBP4NSVX7J11OO7V",
+  "messages": [
+    {
+      "date": "2025-12-03T16:58:34.907Z",
+      "fromName": "Fake Customer",
+      "*id*": "MULTI-CUSTOMER-001",
+      "from": "user",
+      "message": "First inbound message",
+      "fromCustomer": true
+    },
+    {
+      "date": "2025-12-03T16:59:34.907Z",
+      "fromName": "Bot",
+      "*id*": "MULTI-BOT-001",
+      "from": "bot",
+      "message": "Bot response",
+      "intentName": "multi_response",
+      "fromCustomer": false
+    },
+    {
+      "date": "2025-12-03T17:00:34.907Z",
+      "fromName": "Agent One",
+      "*id*": "MULTI-AGENT-001",
+      "from": "operator",
+      "message": "Agent follow up",
+      "operatorId": "op-1",
+      "operatorEmail": "agent@example.com",
+      "operatorName": "Agent One",
+      "operatorRole": "agent",
+      "fromCustomer": false
+    }
+  ],
+  "chatChannelId": "brunoaugustoteste-whatsapp-551151962520"
+}

@@ -11,7 +11,9 @@ import { ROIWiseLogo } from '@/components/brand/roi-wise-logo';
 import {
   Bell,
   Bot,
+  Cable,
   Crown,
+  Database,
   GitBranch,
   LayoutDashboard,
   LogOut,
@@ -92,9 +94,11 @@ const navItems: NavItem[] = [
   { href: '/automations', label: 'Automations', icon: Zap },
   { href: '/flows', label: 'Flows', icon: Workflow, beta: true },
   { href: '/agents', label: 'AI Agents', icon: Bot },
+  { href: '/data/conversations', label: 'Data Explorer', icon: Database },
 ];
 
 const bottomNavItems = [
+  { href: '/settings/channels', label: 'Channels', icon: Cable },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -255,7 +259,10 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
 
           <ul className="flex flex-col gap-1">
             {bottomNavItems.map((item) => {
-              const isActive = pathname.startsWith(item.href);
+              const isActive =
+                item.href === '/settings'
+                  ? pathname === '/settings'
+                  : pathname.startsWith(item.href);
               return (
                 <li key={item.href}>
                   <Link

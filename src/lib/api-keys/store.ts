@@ -18,6 +18,7 @@ export interface ApiKeyRow {
   id: string;
   account_id: string;
   created_by: string | null;
+  channel_id: string | null;
   name: string;
   scopes: string[];
   expires_at: string | null;
@@ -36,7 +37,9 @@ export async function findActiveKeyByHash(
 ): Promise<ApiKeyRow | null> {
   const { data, error } = await supabaseAdmin()
     .from('api_keys')
-    .select('id, account_id, created_by, name, scopes, expires_at, revoked_at')
+    .select(
+      'id, account_id, created_by, channel_id, name, scopes, expires_at, revoked_at'
+    )
     .eq('key_hash', hash)
     .maybeSingle();
 

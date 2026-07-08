@@ -40,7 +40,7 @@ const MAX_EXPIRY_DAYS = 365;
 // Columns safe to expose. `key_hash` is deliberately excluded — it
 // never leaves the server.
 const SAFE_COLUMNS =
-  'id, name, key_prefix, scopes, last_used_at, expires_at, revoked_at, created_at';
+  'id, channel_id, name, key_prefix, scopes, last_used_at, expires_at, revoked_at, created_at';
 
 export async function GET() {
   try {
@@ -82,6 +82,7 @@ export async function POST(request: Request) {
       name?: unknown;
       scopes?: unknown;
       expiresInDays?: unknown;
+      channelId?: unknown;
     } | null;
 
     const rawName = typeof body?.name === 'string' ? body.name.trim() : '';
@@ -121,6 +122,31 @@ export async function POST(request: Request) {
       ).toISOString();
     }
 
+    let channelId: string | null = null;
+    if (typeof body?.channelId === 'string' && body.channelId.trim()) {
+      const candidate = body.channelId.trim();
+      const { data: channel, error: channelErr } = await ctx.supabase
+        .from('channels')
+        .select('id')
+        .eq('id', candidate)
+        .eq('account_id', ctx.accountId)
+        .maybeSingle();
+      if (channelErr) {
+        console.error('[POST /api/account/api-keys] channel lookup:', channelErr);
+        return NextResponse.json(
+          { error: 'Failed to validate channel' },
+          { status: 500 }
+        );
+      }
+      if (!channel) {
+        return NextResponse.json(
+          { error: 'Channel not found' },
+          { status: 404 }
+        );
+      }
+      channelId = channel.id as string;
+    }
+
     const { plaintext, hash, prefix } = generateApiKey();
 
     const { data, error } = await ctx.supabase
@@ -128,6 +154,7 @@ export async function POST(request: Request) {
       .insert({
         account_id: ctx.accountId,
         created_by: ctx.userId,
+        channel_id: channelId,
         name: rawName,
         key_prefix: prefix,
         key_hash: hash,

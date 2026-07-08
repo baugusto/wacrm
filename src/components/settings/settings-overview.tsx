@@ -170,6 +170,11 @@ export function SettingsOverview({
       ),
     },
     {
+      section: 'channels',
+      loading: false,
+      subtitle: 'Connector Gateway',
+    },
+    {
       section: 'members',
       loading: countsLoading,
       subtitle:
