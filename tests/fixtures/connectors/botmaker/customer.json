@@ -1,0 +1,26 @@
+{
+  "lastName": "User",
+  "chatPlatform": "whatsapp",
+  "customerCreationTime": "2025-11-30T16:58:34.907Z",
+  "contactId": "5591112344321",
+  "sessionId": "X1HTQBP4NSVX7J11OO7V_2025-12-03T15:58:34.907Z",
+  "type": "message",
+  "whatsappNumber": "551151962520",
+  "firstName": "Fake",
+  "sessionCreationTime": "2025-12-03T15:58:34.907Z",
+  "v": "1.1",
+  "customerId": "X1HTQBP4NSVX7J11OO7V",
+  "messages": [
+    {
+      "date": "2025-12-03T16:58:34.907Z",
+      "fromName": "Fake Customer",
+      "*id*": "2O2LXNWHAK7AANUNORTZ",
+      "from": "user",
+      "clientPayload": "",
+      "message": "Test message (from user)",
+      "operatorId": null,
+      "fromCustomer": true
+    }
+  ],
+  "chatChannelId": "brunoaugustoteste-whatsapp-551151962520"
+}

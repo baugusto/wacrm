@@ -1,0 +1,13 @@
+{
+  "chatPlatform": "whatsapp",
+  "contactId": "5591112344321",
+  "businessId": "business-1",
+  "statusChangeTime": "2025-12-03T17:03:34.907Z",
+  "messageId": "STATUS-BEFORE-MESSAGE-001",
+  "type": "status",
+  "whatsappNumber": "551151962520",
+  "customerId": "X1HTQBP4NSVX7J11OO7V",
+  "chatChannelId": "brunoaugustoteste-whatsapp-551151962520",
+  "status": "sent",
+  "intentTxId": "intent-tx-before-message"
+}

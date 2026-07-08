@@ -5,7 +5,7 @@
 // This is the machine-to-machine counterpart of `getCurrentAccount`
 // (cookie session → account). Where the dashboard authenticates a
 // human via Supabase cookies, the public API authenticates a caller
-// via `Authorization: Bearer wacrm_live_…`.
+// via `Authorization: Bearer rw_live_…`.
 //
 // Calling convention — every `/api/v1` route does:
 //
@@ -49,6 +49,8 @@ export interface ApiKeyContext {
   scopes: string[];
   /** Who minted the key (null if that user was later removed). */
   createdBy: string | null;
+  /** Optional connector channel this key is bound to. */
+  channelId: string | null;
 }
 
 /**
@@ -114,5 +116,6 @@ export async function requireApiKey(
     keyId: row.id,
     scopes: row.scopes,
     createdBy: row.created_by,
+    channelId: row.channel_id,
   };
 }

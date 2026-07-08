@@ -12,17 +12,20 @@
 //   only slow the per-request auth lookup. A fast hash with a UNIQUE
 //   index is the correct, indexable choice for opaque secrets.
 //
-// Why the `wacrm_live_` prefix
+// Why the `rw_live_` prefix
 //   - Self-identifying: a leaked string is instantly recognisable as
-//     a wacrm key (handy for secret-scanners like GitGuardian).
-//   - Forward-compatible: leaves room for a `wacrm_test_` variant if
+//     a ROI Wise key (handy for secret-scanners like GitGuardian).
+//   - Forward-compatible: leaves room for a `rw_test_` variant if
 //     a sandbox mode is ever added, without reshaping the format.
 // ============================================================
 
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 
 /** Secret prefix on every key. Part of the plaintext, not a secret. */
-export const API_KEY_PREFIX = 'wacrm_live_';
+export const API_KEY_PREFIX = 'rw_live_';
+
+/** Legacy WACRM keys remain accepted so existing API integrations keep working. */
+const LEGACY_API_KEY_PREFIX = 'wacrm_live_';
 
 /**
  * Length of the non-secret display prefix stored in `key_prefix` and
@@ -74,7 +77,9 @@ export function hashApiKey(plaintext: string): string {
  */
 export function looksLikeApiKey(value: string): boolean {
   return (
-    value.startsWith(API_KEY_PREFIX) && value.length > API_KEY_PREFIX.length
+    (value.startsWith(API_KEY_PREFIX) && value.length > API_KEY_PREFIX.length) ||
+    (value.startsWith(LEGACY_API_KEY_PREFIX) &&
+      value.length > LEGACY_API_KEY_PREFIX.length)
   );
 }
 

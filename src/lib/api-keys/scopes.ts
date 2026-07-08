@@ -14,6 +14,9 @@
 // ============================================================
 
 export const API_SCOPES = [
+  'events:write',
+  'events:read',
+  'channels:read',
   'messages:send',
   'messages:read',
   'contacts:read',
@@ -27,6 +30,9 @@ export type ApiScope = (typeof API_SCOPES)[number];
 
 /** Human-readable descriptions, surfaced in the key-creation UI. */
 export const SCOPE_DESCRIPTIONS: Record<ApiScope, string> = {
+  'events:write': 'Ingest connector events',
+  'events:read': 'Read connector raw events',
+  'channels:read': 'Read connector channels',
   'messages:send': 'Send WhatsApp messages',
   'messages:read': 'Read messages and their delivery status',
   'contacts:read': 'List and read contacts',
